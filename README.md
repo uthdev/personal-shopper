@@ -53,11 +53,65 @@ personal-shopper/
 ### Prerequisites
 - Node.js (v18 or higher)
 - pnpm (v8 or higher)
-- MongoDB
-- RabbitMQ
-- Docker (optional)
+- Docker and Docker Compose (for containerized deployment)
+- MongoDB (if running locally)
+- RabbitMQ (if running locally)
 
 ### Installation
+
+#### Option 1: Docker (Production)
+
+1. Install Docker and Docker Compose
+
+2. Build and start all services:
+```bash
+# Build all Docker images
+pnpm docker:build
+
+# Start all services (MongoDB, RabbitMQ, and microservices)
+pnpm docker:up
+
+# View logs
+pnpm docker:logs
+
+# Stop all services
+pnpm docker:down
+
+# Clean up (remove volumes and orphaned containers)
+pnpm docker:clean
+```
+
+3. Access services:
+- Customer Service: http://localhost:3001/health
+- Product Service: http://localhost:3002/health
+- Order Service: http://localhost:3003/health
+- Payment Service: http://localhost:3004/health
+- RabbitMQ Management: http://localhost:15672 (admin/password123)
+- MongoDB: localhost:27017 (admin/password123)
+
+#### Option 2: Hybrid Development (Recommended for Development)
+
+1. Start infrastructure services with Docker:
+```bash
+# Start only MongoDB and RabbitMQ
+pnpm docker:dev:up
+```
+
+2. Install dependencies and run services locally:
+```bash
+# Install dependencies
+pnpm install
+
+# Start all services in development mode with hot reload
+pnpm dev:all
+```
+
+3. Stop infrastructure when done:
+```bash
+pnpm docker:dev:down
+```
+
+#### Option 3: Full Local Development
 
 1. Install pnpm globally (if not already installed):
 ```bash
@@ -103,7 +157,10 @@ pnpm start:all
 
 - [x] Project structure initialized with TypeScript
 - [x] pnpm workspace configuration
-- [ ] Docker configuration
+- [x] Environment configuration with Zod validation
+- [x] Centralized error handling and logging
+- [x] Docker configuration with multi-stage builds
+- [x] Docker Compose orchestration with MongoDB and RabbitMQ
 - [ ] Database schemas
 - [ ] Service implementations
 - [ ] Integration tests
