@@ -1,0 +1,24 @@
+{
+  "name": "personal-shopper",
+  "version": "1.0.0",
+  "description": "E-commerce microservices platform",
+  "private": true,
+  "scripts": {
+    "install:all": "pnpm install",
+    "dev:customer": "pnpm --filter customer-service dev",
+    "dev:product": "pnpm --filter product-service dev",
+    "dev:order": "pnpm --filter order-service dev",
+    "dev:payment": "pnpm --filter payment-service dev",
+    "dev:worker": "pnpm --filter worker-service dev",
+    "dev:all": "concurrently \"pnpm dev:customer\" \"pnpm dev:product\" \"pnpm dev:order\" \"pnpm dev:payment\" \"pnpm dev:worker\"",
+    "build:all": "pnpm -r build",
+    "start:all": "pnpm -r start"
+  },
+  "devDependencies": {
+    "@types/node": "^20.5.0",
+    "typescript": "^5.1.6",
+    "ts-node": "^10.9.1",
+    "nodemon": "^3.0.1",
+    "concurrently": "^8.2.0"
+  }
+}

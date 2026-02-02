@@ -1,0 +1,6 @@
+packages:
+  - 'customer-service'
+  - 'product-service'
+  - 'order-service'
+  - 'payment-service'
+  - 'worker-service'

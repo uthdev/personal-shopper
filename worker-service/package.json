@@ -1,0 +1,19 @@
+{
+  "name": "worker-service",
+  "version": "1.0.0",
+  "description": "Worker service for processing RabbitMQ messages",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "nodemon --exec ts-node src/server.ts"
+  },
+  "dependencies": {
+    "mongoose": "^7.5.0",
+    "dotenv": "^16.3.1",
+    "amqplib": "^0.10.3"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.10.1"
+  }
+}
