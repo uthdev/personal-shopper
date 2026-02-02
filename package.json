@@ -12,7 +12,15 @@
     "dev:worker": "pnpm --filter worker-service dev",
     "dev:all": "concurrently \"pnpm dev:customer\" \"pnpm dev:product\" \"pnpm dev:order\" \"pnpm dev:payment\" \"pnpm dev:worker\"",
     "build:all": "pnpm -r build",
-    "start:all": "pnpm -r start"
+    "start:all": "pnpm -r start",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:clean": "docker-compose down -v --remove-orphans",
+    "docker:dev:up": "docker-compose -f docker-compose.dev.yml up -d",
+    "docker:dev:down": "docker-compose -f docker-compose.dev.yml down",
+    "docker:dev:clean": "docker-compose -f docker-compose.dev.yml down -v --remove-orphans"
   },
   "devDependencies": {
     "@types/node": "^20.5.0",
