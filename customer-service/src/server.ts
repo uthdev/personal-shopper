@@ -1,17 +1,19 @@
 import express from 'express';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { config } from './config';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', service: 'customer-service' });
+  res.json({ 
+    status: 'OK', 
+    service: 'customer-service',
+    environment: config.NODE_ENV,
+    port: config.PORT
+  });
 });
 
-app.listen(PORT, () => {
-  console.log(`Customer service running on port ${PORT}`);
+app.listen(config.PORT, () => {
+  console.log(`Customer service running on port ${config.PORT} in ${config.NODE_ENV} mode`);
 });

@@ -1,8 +1,8 @@
-import dotenv from 'dotenv';
+import { config } from './config';
 
-dotenv.config();
-
-console.log('Worker service starting...');
+console.log(`Worker service starting in ${config.NODE_ENV} mode...`);
+console.log(`Connected to RabbitMQ: ${config.RABBITMQ_URL}`);
+console.log(`Listening to queue: ${config.RABBITMQ_QUEUE}`);
 
 // Worker service will consume RabbitMQ messages
 // Implementation will be added in later issues
