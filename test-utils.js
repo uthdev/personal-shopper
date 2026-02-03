@@ -36,7 +36,7 @@ const mockRabbitMQ = {
     consume: jest.fn().mockResolvedValue(undefined),
     ack: jest.fn().mockResolvedValue(undefined),
     nack: jest.fn().mockResolvedValue(undefined),
-  }
+  },
 };
 
 const createMockRequest = (body = {}, params = {}, query = {}) => ({
@@ -61,5 +61,5 @@ module.exports = {
   mockRabbitMQ,
   createMockRequest,
   createMockResponse,
-  createMockNext
+  createMockNext,
 };

@@ -6,7 +6,7 @@ export enum OrderStatus {
   PROCESSING = 'processing',
   SHIPPED = 'shipped',
   DELIVERED = 'delivered',
-  CANCELLED = 'cancelled'
+  CANCELLED = 'cancelled',
 }
 
 export interface IOrderItem {
@@ -37,77 +37,83 @@ export interface IOrder extends Document {
   updatedAt: Date;
 }
 
-const orderItemSchema = new Schema<IOrderItem>({
-  productId: {
-    type: Schema.Types.ObjectId,
-    required: true,
-    ref: 'Product'
+const orderItemSchema = new Schema<IOrderItem>(
+  {
+    productId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: 'Product',
+    },
+    productName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+    subtotal: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
   },
-  productName: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  price: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  quantity: {
-    type: Number,
-    required: true,
-    min: 1
-  },
-  subtotal: {
-    type: Number,
-    required: true,
-    min: 0
-  }
-}, { _id: false });
+  { _id: false }
+);
 
-const orderSchema = new Schema<IOrder>({
-  customerId: {
-    type: Schema.Types.ObjectId,
-    required: true,
-    ref: 'Customer'
+const orderSchema = new Schema<IOrder>(
+  {
+    customerId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: 'Customer',
+    },
+    orderNumber: {
+      type: String,
+      required: true,
+      unique: true,
+      uppercase: true,
+    },
+    items: [orderItemSchema],
+    totalAmount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    status: {
+      type: String,
+      enum: Object.values(OrderStatus),
+      default: OrderStatus.PENDING,
+    },
+    shippingAddress: {
+      street: { type: String, required: true, trim: true },
+      city: { type: String, required: true, trim: true },
+      state: { type: String, required: true, trim: true },
+      zipCode: { type: String, required: true, trim: true },
+      country: { type: String, required: true, trim: true, default: 'US' },
+    },
+    paymentId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Payment',
+    },
+    notes: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+    },
   },
-  orderNumber: {
-    type: String,
-    required: true,
-    unique: true,
-    uppercase: true
-  },
-  items: [orderItemSchema],
-  totalAmount: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  status: {
-    type: String,
-    enum: Object.values(OrderStatus),
-    default: OrderStatus.PENDING
-  },
-  shippingAddress: {
-    street: { type: String, required: true, trim: true },
-    city: { type: String, required: true, trim: true },
-    state: { type: String, required: true, trim: true },
-    zipCode: { type: String, required: true, trim: true },
-    country: { type: String, required: true, trim: true, default: 'US' }
-  },
-  paymentId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Payment'
-  },
-  notes: {
-    type: String,
-    trim: true,
-    maxlength: 500
+  {
+    timestamps: true,
+    versionKey: false,
   }
-}, {
-  timestamps: true,
-  versionKey: false
-});
+);
 
 // Indexes
 orderSchema.index({ orderNumber: 1 }, { unique: true });
@@ -118,7 +124,7 @@ orderSchema.index({ totalAmount: 1 });
 orderSchema.index({ createdAt: -1 });
 
 // Pre-save middleware to generate order number
-orderSchema.pre('save', async function(next) {
+orderSchema.pre('save', async function (next) {
   if (this.isNew && !this.orderNumber) {
     const timestamp = Date.now().toString(36).toUpperCase();
     const random = Math.random().toString(36).substr(2, 4).toUpperCase();

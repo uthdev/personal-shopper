@@ -20,13 +20,13 @@ class Database {
         maxPoolSize: 10,
         serverSelectionTimeoutMS: 5000,
         socketTimeoutMS: 45000,
-        bufferCommands: false
+        bufferCommands: false,
       };
 
       await mongoose.connect(config.MONGODB_URI, options);
-      
+
       logger.info('Connected to MongoDB successfully');
-      
+
       mongoose.connection.on('error', (error) => {
         logger.error('MongoDB connection error:', error);
       });
@@ -34,7 +34,6 @@ class Database {
       mongoose.connection.on('disconnected', () => {
         logger.warn('MongoDB disconnected');
       });
-
     } catch (error) {
       logger.error('Failed to connect to MongoDB:', error);
       process.exit(1);

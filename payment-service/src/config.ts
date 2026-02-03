@@ -5,15 +5,21 @@ dotenv.config();
 
 const envSchema = z.object({
   PORT: z.string().transform(Number).default('3004'),
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  NODE_ENV: z
+    .enum(['development', 'production', 'test'])
+    .default('development'),
   MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
   DB_NAME: z.string().min(1, 'DB_NAME is required'),
-  CUSTOMER_SERVICE_URL: z.string().url('CUSTOMER_SERVICE_URL must be a valid URL'),
-  PRODUCT_SERVICE_URL: z.string().url('PRODUCT_SERVICE_URL must be a valid URL'),
+  CUSTOMER_SERVICE_URL: z
+    .string()
+    .url('CUSTOMER_SERVICE_URL must be a valid URL'),
+  PRODUCT_SERVICE_URL: z
+    .string()
+    .url('PRODUCT_SERVICE_URL must be a valid URL'),
   ORDER_SERVICE_URL: z.string().url('ORDER_SERVICE_URL must be a valid URL'),
   RABBITMQ_URL: z.string().min(1, 'RABBITMQ_URL is required'),
   RABBITMQ_QUEUE: z.string().min(1, 'RABBITMQ_QUEUE is required'),
-  RABBITMQ_EXCHANGE: z.string().min(1, 'RABBITMQ_EXCHANGE is required')
+  RABBITMQ_EXCHANGE: z.string().min(1, 'RABBITMQ_EXCHANGE is required'),
 });
 
 function validateEnv() {

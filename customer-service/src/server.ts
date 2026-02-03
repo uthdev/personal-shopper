@@ -11,21 +11,23 @@ const app = express();
 Database.getInstance().connect();
 
 // Request logging
-app.use(morgan('combined', {
-  stream: {
-    write: (message: string) => logger.info(message.trim())
-  }
-}));
+app.use(
+  morgan('combined', {
+    stream: {
+      write: (message: string) => logger.info(message.trim()),
+    },
+  })
+);
 
 app.use(express.json());
 
 app.get('/health', (req, res) => {
   logger.info('Health check requested');
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     service: 'customer-service',
     environment: config.NODE_ENV,
-    port: config.PORT
+    port: config.PORT,
   });
 });
 
@@ -43,5 +45,7 @@ process.on('SIGINT', async () => {
 });
 
 app.listen(config.PORT, () => {
-  logger.info(`Customer service running on port ${config.PORT} in ${config.NODE_ENV} mode`);
+  logger.info(
+    `Customer service running on port ${config.PORT} in ${config.NODE_ENV} mode`
+  );
 });

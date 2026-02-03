@@ -41,21 +41,27 @@ class RabbitMQConsumer {
 
     try {
       logger.info('Connecting to RabbitMQ...');
-      
+
       this.connection = await amqp.connect(config.RABBITMQ_URL);
       if (!this.connection) {
         throw new Error('Failed to establish connection');
       }
-      
+
       this.channel = await this.connection.createChannel();
       if (!this.channel) {
         throw new Error('Failed to create channel');
       }
 
       // Assert exchange and queue
-      await this.channel.assertExchange(config.RABBITMQ_EXCHANGE, 'direct', { durable: true });
+      await this.channel.assertExchange(config.RABBITMQ_EXCHANGE, 'direct', {
+        durable: true,
+      });
       await this.channel.assertQueue(config.RABBITMQ_QUEUE, { durable: true });
-      await this.channel.bindQueue(config.RABBITMQ_QUEUE, config.RABBITMQ_EXCHANGE, 'transaction');
+      await this.channel.bindQueue(
+        config.RABBITMQ_QUEUE,
+        config.RABBITMQ_EXCHANGE,
+        'transaction'
+      );
 
       // Set prefetch to process one message at a time
       await this.channel.prefetch(1);
@@ -77,7 +83,6 @@ class RabbitMQConsumer {
 
       // Start consuming messages
       await this.startConsuming();
-
     } catch (error) {
       this.isConnecting = false;
       logger.error('Failed to connect to RabbitMQ:', error);
@@ -90,7 +95,9 @@ class RabbitMQConsumer {
       throw new Error('RabbitMQ channel not available');
     }
 
-    logger.info(`Starting to consume messages from queue: ${config.RABBITMQ_QUEUE}`);
+    logger.info(
+      `Starting to consume messages from queue: ${config.RABBITMQ_QUEUE}`
+    );
 
     await this.channel.consume(config.RABBITMQ_QUEUE, async (message: any) => {
       if (message) {
@@ -104,9 +111,9 @@ class RabbitMQConsumer {
       const content = message.content.toString();
       const transactionData: TransactionMessage = JSON.parse(content);
 
-      logger.info('Processing transaction message', { 
+      logger.info('Processing transaction message', {
         orderId: transactionData.orderId,
-        customerId: transactionData.customerId 
+        customerId: transactionData.customerId,
       });
 
       // Save transaction to database
@@ -123,25 +130,24 @@ class RabbitMQConsumer {
         paymentGateway: 'stripe',
         metadata: {
           processedBy: 'worker-service',
-          originalTimestamp: transactionData.timestamp
-        }
+          originalTimestamp: transactionData.timestamp,
+        },
       });
 
       await transaction.save();
 
-      logger.info('Transaction saved successfully', { 
+      logger.info('Transaction saved successfully', {
         transactionId: transaction.transactionId,
-        orderId: transactionData.orderId 
+        orderId: transactionData.orderId,
       });
 
       // Acknowledge message
       if (this.channel) {
         this.channel.ack(message);
       }
-
     } catch (error) {
       logger.error('Error processing message:', error);
-      
+
       // Reject message and requeue for retry
       if (this.channel) {
         this.channel.nack(message, false, true);
@@ -169,9 +175,11 @@ class RabbitMQConsumer {
 
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * this.reconnectAttempts;
-    
-    logger.info(`Attempting to reconnect to RabbitMQ (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay}ms`);
-    
+
+    logger.info(
+      `Attempting to reconnect to RabbitMQ (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay}ms`
+    );
+
     setTimeout(async () => {
       await this.connect();
     }, delay);

@@ -24,7 +24,11 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:all": "pnpm -r test"
+    "test:all": "pnpm -r test",
+    "lint": "eslint . --ext .ts,.js",
+    "lint:fix": "eslint . --ext .ts,.js --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@types/node": "^20.5.0",
@@ -41,6 +45,10 @@
     "ts-jest": "^29.1.1",
     "supertest": "^6.3.3",
     "@types/supertest": "^2.0.12",
-    "mongodb-memory-server": "^8.15.1"
+    "mongodb-memory-server": "^8.15.1",
+    "eslint": "^8.47.0",
+    "@typescript-eslint/eslint-plugin": "^6.4.0",
+    "@typescript-eslint/parser": "^6.4.0",
+    "prettier": "^3.0.2"
   }
 }

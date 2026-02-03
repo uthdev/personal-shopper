@@ -4,13 +4,13 @@ export enum TransactionStatus {
   PENDING = 'pending',
   COMPLETED = 'completed',
   FAILED = 'failed',
-  REFUNDED = 'refunded'
+  REFUNDED = 'refunded',
 }
 
 export enum TransactionType {
   PAYMENT = 'payment',
   REFUND = 'refund',
-  CHARGEBACK = 'chargeback'
+  CHARGEBACK = 'chargeback',
 }
 
 export interface ITransaction extends Document {
@@ -32,85 +32,88 @@ export interface ITransaction extends Document {
   updatedAt: Date;
 }
 
-const transactionSchema = new Schema<ITransaction>({
-  transactionId: {
-    type: String,
-    required: true, // Now required since provided by payment service
-    unique: true,
-    uppercase: true
-  },
-  customerId: {
-    type: Schema.Types.ObjectId,
-    required: true,
-    ref: 'Customer'
-  },
-  orderId: {
-    type: Schema.Types.ObjectId,
-    required: true,
-    ref: 'Order'
-  },
-  productId: {
-    type: Schema.Types.ObjectId,
-    required: true,
-    ref: 'Product'
-  },
-  amount: {
-    type: Number,
-    required: true,
-    min: 0,
-    validate: {
-      validator: function(value: number) {
-        return Number.isFinite(value) && value >= 0;
+const transactionSchema = new Schema<ITransaction>(
+  {
+    transactionId: {
+      type: String,
+      required: true, // Now required since provided by payment service
+      unique: true,
+      uppercase: true,
+    },
+    customerId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: 'Customer',
+    },
+    orderId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: 'Order',
+    },
+    productId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: 'Product',
+    },
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+      validate: {
+        validator: function (value: number) {
+          return Number.isFinite(value) && value >= 0;
+        },
+        message: 'Amount must be a positive number',
       },
-      message: 'Amount must be a positive number'
-    }
+    },
+    currency: {
+      type: String,
+      required: true,
+      uppercase: true,
+      default: 'USD',
+      enum: ['USD', 'EUR', 'GBP', 'CAD'],
+    },
+    status: {
+      type: String,
+      enum: Object.values(TransactionStatus),
+      default: TransactionStatus.PENDING,
+    },
+    type: {
+      type: String,
+      enum: Object.values(TransactionType),
+      default: TransactionType.PAYMENT,
+    },
+    paymentMethod: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+    },
+    paymentGateway: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      default: 'stripe',
+    },
+    gatewayTransactionId: {
+      type: String,
+      trim: true,
+    },
+    metadata: {
+      type: Schema.Types.Mixed,
+      default: {},
+    },
+    processedAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
-  currency: {
-    type: String,
-    required: true,
-    uppercase: true,
-    default: 'USD',
-    enum: ['USD', 'EUR', 'GBP', 'CAD']
-  },
-  status: {
-    type: String,
-    enum: Object.values(TransactionStatus),
-    default: TransactionStatus.PENDING
-  },
-  type: {
-    type: String,
-    enum: Object.values(TransactionType),
-    default: TransactionType.PAYMENT
-  },
-  paymentMethod: {
-    type: String,
-    required: true,
-    trim: true,
-    lowercase: true
-  },
-  paymentGateway: {
-    type: String,
-    required: true,
-    trim: true,
-    lowercase: true,
-    default: 'stripe'
-  },
-  gatewayTransactionId: {
-    type: String,
-    trim: true
-  },
-  metadata: {
-    type: Schema.Types.Mixed,
-    default: {}
-  },
-  processedAt: {
-    type: Date,
-    default: Date.now
+  {
+    timestamps: true,
+    versionKey: false,
   }
-}, {
-  timestamps: true,
-  versionKey: false
-});
+);
 
 // Indexes
 transactionSchema.index({ transactionId: 1 }, { unique: true });
@@ -123,7 +126,7 @@ transactionSchema.index({ processedAt: -1 });
 transactionSchema.index({ createdAt: -1 });
 
 // Pre-save middleware (kept for backward compatibility)
-transactionSchema.pre('save', async function(next) {
+transactionSchema.pre('save', async function (next) {
   if (this.isNew && !this.transactionId) {
     const timestamp = Date.now().toString(36).toUpperCase();
     const random = Math.random().toString(36).substr(2, 6).toUpperCase();
@@ -132,4 +135,7 @@ transactionSchema.pre('save', async function(next) {
   next();
 });
 
-export const Transaction = mongoose.model<ITransaction>('Transaction', transactionSchema);
+export const Transaction = mongoose.model<ITransaction>(
+  'Transaction',
+  transactionSchema
+);

@@ -40,21 +40,27 @@ class RabbitMQConnection {
 
     try {
       logger.info('Connecting to RabbitMQ...');
-      
+
       this.connection = await amqp.connect(config.RABBITMQ_URL);
       if (!this.connection) {
         throw new Error('Failed to establish connection');
       }
-      
+
       this.channel = await this.connection.createChannel();
       if (!this.channel) {
         throw new Error('Failed to create channel');
       }
 
       // Assert exchange and queue
-      await this.channel.assertExchange(config.RABBITMQ_EXCHANGE, 'direct', { durable: true });
+      await this.channel.assertExchange(config.RABBITMQ_EXCHANGE, 'direct', {
+        durable: true,
+      });
       await this.channel.assertQueue(config.RABBITMQ_QUEUE, { durable: true });
-      await this.channel.bindQueue(config.RABBITMQ_QUEUE, config.RABBITMQ_EXCHANGE, 'transaction');
+      await this.channel.bindQueue(
+        config.RABBITMQ_QUEUE,
+        config.RABBITMQ_EXCHANGE,
+        'transaction'
+      );
 
       // Connection event handlers
       this.connection.on('error', (error: Error) => {
@@ -70,7 +76,6 @@ class RabbitMQConnection {
       this.reconnectAttempts = 0;
       this.isConnecting = false;
       logger.info('Connected to RabbitMQ successfully');
-
     } catch (error) {
       this.isConnecting = false;
       logger.error('Failed to connect to RabbitMQ:', error);
@@ -97,13 +102,14 @@ class RabbitMQConnection {
       );
 
       if (published) {
-        logger.info('Message published successfully', { orderId: message.orderId });
+        logger.info('Message published successfully', {
+          orderId: message.orderId,
+        });
         return true;
       } else {
         logger.warn('Failed to publish message - channel buffer full');
         return false;
       }
-
     } catch (error) {
       logger.error('Error publishing message:', error);
       return false;
@@ -130,9 +136,11 @@ class RabbitMQConnection {
 
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * this.reconnectAttempts;
-    
-    logger.info(`Attempting to reconnect to RabbitMQ (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay}ms`);
-    
+
+    logger.info(
+      `Attempting to reconnect to RabbitMQ (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay}ms`
+    );
+
     setTimeout(async () => {
       await this.connect();
     }, delay);

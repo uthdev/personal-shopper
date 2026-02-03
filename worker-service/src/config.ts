@@ -4,12 +4,14 @@ import { z } from 'zod';
 dotenv.config();
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  NODE_ENV: z
+    .enum(['development', 'production', 'test'])
+    .default('development'),
   MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
   DB_NAME: z.string().min(1, 'DB_NAME is required'),
   RABBITMQ_URL: z.string().min(1, 'RABBITMQ_URL is required'),
   RABBITMQ_QUEUE: z.string().min(1, 'RABBITMQ_QUEUE is required'),
-  RABBITMQ_EXCHANGE: z.string().min(1, 'RABBITMQ_EXCHANGE is required')
+  RABBITMQ_EXCHANGE: z.string().min(1, 'RABBITMQ_EXCHANGE is required'),
 });
 
 function validateEnv() {
