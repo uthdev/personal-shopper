@@ -51,6 +51,7 @@ personal-shopper/
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js (v18 or higher)
 - pnpm (v8 or higher)
 - Docker and Docker Compose (for containerized deployment)
@@ -64,6 +65,7 @@ personal-shopper/
 1. Install Docker and Docker Compose
 
 2. Build and start all services:
+
 ```bash
 # Build all Docker images
 pnpm docker:build
@@ -82,6 +84,7 @@ pnpm docker:clean
 ```
 
 3. Access services:
+
 - Customer Service: http://localhost:3001/health
 - Product Service: http://localhost:3002/health
 - Order Service: http://localhost:3003/health
@@ -92,12 +95,14 @@ pnpm docker:clean
 #### Option 2: Hybrid Development (Recommended for Development)
 
 1. Start infrastructure services with Docker:
+
 ```bash
 # Start only MongoDB and RabbitMQ
 pnpm docker:dev:up
 ```
 
 2. Install dependencies and run services locally:
+
 ```bash
 # Install dependencies
 pnpm install
@@ -107,6 +112,7 @@ pnpm dev:all
 ```
 
 3. Stop infrastructure when done:
+
 ```bash
 pnpm docker:dev:down
 ```
@@ -114,16 +120,19 @@ pnpm docker:dev:down
 #### Option 3: Full Local Development
 
 1. Install pnpm globally (if not already installed):
+
 ```bash
 npm install -g pnpm
 ```
 
 2. Install all dependencies:
+
 ```bash
 pnpm install
 ```
 
 3. Start services in development mode:
+
 ```bash
 # All services at once (recommended)
 pnpm dev:all
@@ -144,11 +153,13 @@ cd worker-service && pnpm dev
 ```
 
 4. Build all services:
+
 ```bash
 pnpm build:all
 ```
 
 5. Start all services in production mode:
+
 ```bash
 pnpm start:all
 ```

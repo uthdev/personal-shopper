@@ -11,7 +11,7 @@ describe('Worker Service', () => {
         status: 'completed',
         type: 'payment',
         paymentMethod: 'credit_card',
-        paymentGateway: 'stripe'
+        paymentGateway: 'stripe',
       };
 
       expect(transactionData.transactionId).toBe('TXN_20231201_ABC12345');
@@ -33,8 +33,8 @@ describe('Worker Service', () => {
         paymentGateway: 'stripe',
         metadata: {
           processedBy: 'worker-service',
-          originalTimestamp: new Date()
-        }
+          originalTimestamp: new Date(),
+        },
       };
 
       expect(transactionData.metadata.processedBy).toBe('worker-service');

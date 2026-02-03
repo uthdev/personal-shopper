@@ -6,9 +6,9 @@ jest.mock('./src/rabbitmq', () => ({
     getInstance: () => ({
       connect: jest.fn(),
       publish: jest.fn(),
-      disconnect: jest.fn()
-    })
-  }
+      disconnect: jest.fn(),
+    }),
+  },
 }));
 
 beforeAll(async () => {

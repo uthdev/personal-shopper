@@ -22,7 +22,7 @@ export const errorHandler = (
   err: AppError,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
   const { statusCode = 500, message } = err;
 
@@ -30,20 +30,20 @@ export const errorHandler = (
     error: {
       message,
       stack: err.stack,
-      statusCode
+      statusCode,
     },
     request: {
       method: req.method,
       url: req.url,
-      ip: req.ip
-    }
+      ip: req.ip,
+    },
   });
 
   res.status(statusCode).json({
     status: 'error',
     statusCode,
     message: statusCode === 500 ? 'Internal Server Error' : message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 };
 
@@ -51,6 +51,6 @@ export const notFoundHandler = (req: Request, res: Response) => {
   res.status(404).json({
     status: 'error',
     statusCode: 404,
-    message: `Route ${req.method} ${req.url} not found`
+    message: `Route ${req.method} ${req.url} not found`,
   });
 };
