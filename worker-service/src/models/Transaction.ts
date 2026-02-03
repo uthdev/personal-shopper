@@ -35,7 +35,7 @@ export interface ITransaction extends Document {
 const transactionSchema = new Schema<ITransaction>({
   transactionId: {
     type: String,
-    required: true,
+    required: true, // Now required since provided by payment service
     unique: true,
     uppercase: true
   },
@@ -122,7 +122,7 @@ transactionSchema.index({ paymentGateway: 1, gatewayTransactionId: 1 });
 transactionSchema.index({ processedAt: -1 });
 transactionSchema.index({ createdAt: -1 });
 
-// Pre-save middleware to generate transaction ID
+// Pre-save middleware (kept for backward compatibility)
 transactionSchema.pre('save', async function(next) {
   if (this.isNew && !this.transactionId) {
     const timestamp = Date.now().toString(36).toUpperCase();
