@@ -17,7 +17,7 @@ app.get('/health', customerController.healthCheck);
 app.get('/customers/:id', customerController.getCustomerById);
 
 // Add error handler middleware for testing
-app.use((err: any, req: any, res: any, next: any) => {
+app.use((err: any, _req: any, res: any, _next: any) => {
   res.status(err.statusCode || 500).json({ error: err.message });
 });
 
@@ -110,7 +110,7 @@ describe('Customer Controller', () => {
         new CustomError('Invalid customer ID format', 400)
       );
 
-      const response = await request(app)
+      await request(app)
         .get('/customers/')
         .expect(404); // Express returns 404 for missing route params
     });
