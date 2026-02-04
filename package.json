@@ -28,7 +28,14 @@
     "lint": "eslint . --ext .ts,.js",
     "lint:fix": "eslint . --ext .ts,.js --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "seed": "pnpm --filter customer-service seed && pnpm --filter product-service seed",
+    "seed:customers": "pnpm --filter customer-service seed",
+    "seed:products": "pnpm --filter product-service seed",
+    "seed:dev": "pnpm --filter customer-service seed:dev && pnpm --filter product-service seed:dev",
+    "seed:dev:customers": "pnpm --filter customer-service seed:dev",
+    "seed:dev:products": "pnpm --filter product-service seed:dev",
+    "verify:seeding": "node verify-seeding.js"
   },
   "devDependencies": {
     "@types/node": "^20.5.0",
