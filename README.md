@@ -164,6 +164,47 @@ pnpm build:all
 pnpm start:all
 ```
 
+## Data Seeding
+
+The project includes seeding scripts to populate the database with demo data.
+
+### Seeding Commands
+
+```bash
+# Seed all data (customers and products)
+pnpm seed
+
+# Seed only customers
+pnpm seed:customers
+
+# Seed only products
+pnpm seed:products
+
+# Verify seeded data
+pnpm verify:seeding
+```
+
+### Docker Seeding
+
+When using Docker, seeding runs automatically after services start. The seed service:
+- Waits for customer and product services to be healthy
+- Seeds demo customers and products
+- Exits after completion
+
+### Sample Data
+
+**Customers:**
+- John Doe (john.doe@example.com)
+- Jane Smith (jane.smith@example.com) 
+- Bob Johnson (bob.johnson@example.com)
+
+**Products:**
+- iPhone 15 Pro ($999.99)
+- Samsung Galaxy S24 ($799.99)
+- Nike Air Max 270 ($150.00)
+- MacBook Pro 14" ($1999.99)
+- Levi's 501 Jeans ($89.99)
+
 ## Development Status
 
 - [x] Project structure initialized with TypeScript
@@ -172,7 +213,8 @@ pnpm start:all
 - [x] Centralized error handling and logging
 - [x] Docker configuration with multi-stage builds
 - [x] Docker Compose orchestration with MongoDB and RabbitMQ
-- [ ] Database schemas
+- [x] Customer and product data seeding scripts
+- [x] Database schemas
 - [ ] Service implementations
 - [ ] Integration tests
 
