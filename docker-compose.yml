@@ -45,6 +45,41 @@ services:
       retries: 3
       start_period: 40s
 
+  # Init Containers for Data Seeding
+  customer-seed:
+    build:
+      context: ./customer-service
+      dockerfile: Dockerfile
+    container_name: personal-shopper-customer-seed
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/customer_db?authSource=admin
+      DB_NAME: customer_db
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - personal-shopper-network
+    command: ["npm", "run", "seed"]
+    restart: "no"
+
+  product-seed:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    container_name: personal-shopper-product-seed
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/product_db?authSource=admin
+      DB_NAME: product_db
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - personal-shopper-network
+    command: ["npm", "run", "seed"]
+    restart: "no"
+
   # Microservices
   customer-service:
     build:
@@ -65,6 +100,8 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+      customer-seed:
+        condition: service_completed_successfully
     networks:
       - personal-shopper-network
     healthcheck:
@@ -99,6 +136,8 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+      product-seed:
+        condition: service_completed_successfully
     networks:
       - personal-shopper-network
     healthcheck:
