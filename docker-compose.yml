@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # Database Services
   mongodb:
-    image: mongo:7.0
+    image: mongo:6.0
     container_name: personal-shopper-mongodb
     restart: unless-stopped
     environment:
@@ -48,8 +48,10 @@ services:
   # Init Containers for Data Seeding
   customer-seed:
     build:
-      context: ./customer-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./customer-service/Dockerfile
+      args:
+        SERVICE_NAME: customer-service
     container_name: personal-shopper-customer-seed
     environment:
       NODE_ENV: production
@@ -60,13 +62,15 @@ services:
         condition: service_healthy
     networks:
       - personal-shopper-network
-    command: ["npm", "run", "seed"]
+    command: ["sh", "-c", "pnpm --filter customer-service run seed"]
     restart: "no"
 
   product-seed:
     build:
-      context: ./product-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./product-service/Dockerfile
+      args:
+        SERVICE_NAME: product-service
     container_name: personal-shopper-product-seed
     environment:
       NODE_ENV: production
@@ -77,14 +81,17 @@ services:
         condition: service_healthy
     networks:
       - personal-shopper-network
-    command: ["npm", "run", "seed"]
+    command: ["sh", "-c", "pnpm --filter product-service run seed"]
     restart: "no"
 
   # Microservices
   customer-service:
     build:
-      context: ./customer-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./customer-service/Dockerfile
+      args:
+        SERVICE_NAME: customer-service
+        PORT: 3001
     container_name: personal-shopper-customer-service
     restart: unless-stopped
     environment:
@@ -119,8 +126,11 @@ services:
 
   product-service:
     build:
-      context: ./product-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./product-service/Dockerfile
+      args:
+        SERVICE_NAME: product-service
+        PORT: 3002
     container_name: personal-shopper-product-service
     restart: unless-stopped
     environment:
@@ -155,8 +165,11 @@ services:
 
   order-service:
     build:
-      context: ./order-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./order-service/Dockerfile
+      args:
+        SERVICE_NAME: order-service
+        PORT: 3003
     container_name: personal-shopper-order-service
     restart: unless-stopped
     environment:
@@ -194,8 +207,11 @@ services:
 
   payment-service:
     build:
-      context: ./payment-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./payment-service/Dockerfile
+      args:
+        SERVICE_NAME: payment-service
+        PORT: 3004
     container_name: personal-shopper-payment-service
     restart: unless-stopped
     environment:
@@ -233,8 +249,10 @@ services:
 
   worker-service:
     build:
-      context: ./worker-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./worker-service/Dockerfile
+      args:
+        SERVICE_NAME: worker-service
     container_name: personal-shopper-worker-service
     restart: unless-stopped
     environment:

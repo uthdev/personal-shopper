@@ -1,45 +1,40 @@
+# ---- Build Stage ----
 FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-COPY pnpm-lock.yaml ./
+# Copy root pnpm files
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 
-# Install pnpm and dependencies
+# Install pnpm globally
 RUN npm install -g pnpm
-RUN pnpm install --frozen-lockfile
 
-# Copy source code
+# Copy entire monorepo
 COPY . .
 
-# Build the application
-RUN pnpm build
+# Build only this service
+ARG SERVICE_NAME
+RUN pnpm install --filter ${SERVICE_NAME} --frozen-lockfile
+RUN pnpm --filter ${SERVICE_NAME} build
 
+# Deploy service with production deps (legacy mode for pnpm v10)
+RUN pnpm deploy --filter ${SERVICE_NAME} --prod --legacy /app/deploy
+
+# ---- Production Stage ----
 FROM node:18-alpine AS production
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-COPY pnpm-lock.yaml ./
-
-# Install pnpm and production dependencies only
-RUN npm install -g pnpm
-RUN pnpm install --frozen-lockfile --prod
-
-# Copy built application
-COPY --from=builder /app/dist ./dist
-
-# Create logs directory
-RUN mkdir -p logs
+# Copy deploy folder from builder
+COPY --from=builder /app/deploy ./
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S worker -u 1001
-RUN chown -R worker:nodejs /app
+RUN addgroup -g 1001 -S nodejs \
+  && adduser -S worker -u 1001 \
+  && chown -R worker:nodejs /app
 USER worker
 
-# No port exposed as this is a worker service
+ARG PORT=3000
+EXPOSE ${PORT}
 
 CMD ["node", "dist/server.js"]

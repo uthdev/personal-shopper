@@ -37,25 +37,28 @@
     "seed:dev:products": "pnpm --filter product-service seed:dev",
     "verify:seeding": "node verify-seeding.js"
   },
-  "devDependencies": {
-    "@types/node": "^20.5.0",
-    "typescript": "^5.1.6",
-    "ts-node": "^10.9.1",
-    "nodemon": "^3.0.1",
-    "concurrently": "^8.2.0",
-    "zod": "^3.22.2",
-    "winston": "^3.10.0",
-    "morgan": "^1.10.0",
-    "@types/morgan": "^1.9.4",
-    "jest": "^29.6.2",
-    "@types/jest": "^29.5.4",
-    "ts-jest": "^29.1.1",
-    "supertest": "^6.3.3",
-    "@types/supertest": "^2.0.12",
-    "mongodb-memory-server": "^8.15.1",
-    "eslint": "^8.47.0",
-    "@typescript-eslint/eslint-plugin": "^6.4.0",
-    "@typescript-eslint/parser": "^6.4.0",
-    "prettier": "^3.0.2"
-  }
+  "dependencies": {
+  "express": "^4.x",
+  "morgan": "^1.10.0",
+  "winston": "^3.10.0",
+  "zod": "^3.22.2"
+},
+"devDependencies": {
+  "@types/node": "^20.5.0",
+  "typescript": "^5.1.6",
+  "ts-node": "^10.9.1",
+  "nodemon": "^3.0.1",
+  "concurrently": "^8.2.0",
+  "@types/morgan": "^1.9.4",
+  "jest": "^29.6.2",
+  "@types/jest": "^29.5.4",
+  "ts-jest": "^29.1.1",
+  "supertest": "^6.3.3",
+  "@types/supertest": "^2.0.12",
+  "mongodb-memory-server": "^8.15.1",
+  "eslint": "^8.47.0",
+  "@typescript-eslint/eslint-plugin": "^6.4.0",
+  "@typescript-eslint/parser": "^6.4.0",
+  "prettier": "^3.0.2"
+}
 }
