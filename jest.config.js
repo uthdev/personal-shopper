@@ -1,19 +1,11 @@
 module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  transform: {
-    '^.+\.ts$': [
-      'ts-jest',
-      {
-        tsconfig: {
-          target: 'es2020',
-          module: 'commonjs',
-        },
-      },
-    ],
-  },
-  moduleFileExtensions: ['ts', 'js'],
-  testMatch: ['**/__tests__/**/*.test.ts'],
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  projects: [
+    '<rootDir>/customer-service/jest.config.js',
+    '<rootDir>/product-service/jest.config.js',
+    '<rootDir>/order-service/jest.config.js',
+    '<rootDir>/payment-service/jest.config.js',
+    '<rootDir>/worker-service/jest.config.js',
+  ],
+  maxWorkers: 1,
   testTimeout: 30000,
 };

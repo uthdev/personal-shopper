@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { ProductController } from '../controllers/productController';
+import { validateParams } from '../middleware/validation';
+import { getProductByIdParamSchema } from '../schemas/product';
 
 const router: Router = Router();
 const productController = new ProductController();
@@ -8,6 +10,6 @@ const productController = new ProductController();
 router.get('/health', productController.healthCheck);
 
 // Get product by ID
-router.get('/products/:id', productController.getProductById);
+router.get('/products/:id', validateParams(getProductByIdParamSchema), productController.getProductById);
 
 export default router;

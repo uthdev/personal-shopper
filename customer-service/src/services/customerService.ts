@@ -5,9 +5,6 @@ import logger from '../utils/logger';
 
 export class CustomerService {
   async getCustomerById(id: string): Promise<ICustomer> {
-    if (!id || id.length !== 24) {
-      throw new CustomError('Invalid customer ID format', 400);
-    }
 
     const customer = await Customer.findById(id);
 

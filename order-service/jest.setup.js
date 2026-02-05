@@ -1,4 +1,4 @@
-import { TestDatabase } from '../test-utils';
+const { TestDatabase } = require('../test-utils.js');
 
 beforeAll(async () => {
   await TestDatabase.connect();

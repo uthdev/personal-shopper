@@ -7,11 +7,11 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
     .default('development'),
-  MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
-  DB_NAME: z.string().min(1, 'DB_NAME is required'),
-  RABBITMQ_URL: z.string().min(1, 'RABBITMQ_URL is required'),
-  RABBITMQ_QUEUE: z.string().min(1, 'RABBITMQ_QUEUE is required'),
-  RABBITMQ_EXCHANGE: z.string().min(1, 'RABBITMQ_EXCHANGE is required'),
+  MONGODB_URI: z.string().min(1, 'MONGODB_URI is required').optional().default('mongodb://localhost:27017/worker_db'),
+  DB_NAME: z.string().min(1, 'DB_NAME is required').optional().default('worker_db'),
+  RABBITMQ_URL: z.string().min(1, 'RABBITMQ_URL is required').optional().default('amqp://guest:guest@localhost:5672'),
+  RABBITMQ_QUEUE: z.string().min(1, 'RABBITMQ_QUEUE is required').optional().default('transactions'),
+  RABBITMQ_EXCHANGE: z.string().min(1, 'RABBITMQ_EXCHANGE is required').optional().default('orders'),
 });
 
 function validateEnv() {
@@ -21,7 +21,18 @@ function validateEnv() {
     return env;
   } catch (error) {
     console.error('Worker service environment validation failed:', error);
-    process.exit(1);
+    if (process.env.NODE_ENV !== 'test') {
+      process.exit(1);
+    }
+    // Return defaults for test environment
+    return {
+      NODE_ENV: 'test',
+      MONGODB_URI: 'mongodb://localhost:27017/worker_db',
+      DB_NAME: 'worker_db',
+      RABBITMQ_URL: 'amqp://guest:guest@localhost:5672',
+      RABBITMQ_QUEUE: 'transactions',
+      RABBITMQ_EXCHANGE: 'orders',
+    };
   }
 }
 

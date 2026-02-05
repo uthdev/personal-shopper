@@ -4,6 +4,8 @@ import { CustomerController } from '../src/controllers/customerController';
 import { CustomerService } from '../src/services/customerService';
 import { ICustomer } from '../src/types/customer';
 import { CustomError } from '../src/middleware/errorHandler';
+import { validateParams } from '../src/middleware/validation';
+import { getCustomerByIdParamSchema } from '../src/schemas/customer';
 
 // Mock the CustomerService
 jest.mock('../src/services/customerService');
@@ -14,7 +16,7 @@ app.use(express.json());
 
 const customerController = new CustomerController();
 app.get('/health', customerController.healthCheck);
-app.get('/customers/:id', customerController.getCustomerById);
+app.get('/customers/:id', validateParams(getCustomerByIdParamSchema), customerController.getCustomerById);
 
 // Add error handler middleware for testing
 app.use((err: any, _req: any, res: any, _next: any) => {
@@ -94,22 +96,16 @@ describe('Customer Controller', () => {
 
     it('should return 400 for invalid customer ID format', async () => {
       const invalidId = 'invalid-id';
-      mockCustomerService.getCustomerById.mockRejectedValue(
-        new CustomError('Invalid customer ID format', 400)
-      );
 
       const response = await request(app)
         .get(`/customers/${invalidId}`)
         .expect(400);
 
-      expect(response.body.error).toBe('Invalid customer ID format');
+      expect(response.body.message).toBe('Invalid input');
+      expect(response.body.errors.id).toBe('Invalid ObjectId format');
     });
 
     it('should return 400 for empty customer ID', async () => {
-      mockCustomerService.getCustomerById.mockRejectedValue(
-        new CustomError('Invalid customer ID format', 400)
-      );
-
       await request(app)
         .get('/customers/')
         .expect(404); // Express returns 404 for missing route params
@@ -117,15 +113,13 @@ describe('Customer Controller', () => {
 
     it('should return 400 for short customer ID', async () => {
       const shortId = '123';
-      mockCustomerService.getCustomerById.mockRejectedValue(
-        new CustomError('Invalid customer ID format', 400)
-      );
 
       const response = await request(app)
         .get(`/customers/${shortId}`)
         .expect(400);
 
-      expect(response.body.error).toBe('Invalid customer ID format');
+      expect(response.body.message).toBe('Invalid input');
+      expect(response.body.errors.id).toBe('Invalid ObjectId format');
     });
 
     it('should return 500 for unexpected service errors', async () => {

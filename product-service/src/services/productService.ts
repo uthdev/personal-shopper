@@ -5,9 +5,6 @@ import logger from '../utils/logger';
 
 export class ProductService {
   async getProductById(id: string): Promise<IProduct> {
-    if (!id || id.length !== 24) {
-      throw new CustomError('Invalid product ID format', 400);
-    }
 
     const product = await Product.findById(id);
 
