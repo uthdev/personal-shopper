@@ -4,6 +4,8 @@ import { ProductController } from '../src/controllers/productController';
 import { ProductService } from '../src/services/productService';
 import { IProduct } from '../src/types/product';
 import { CustomError } from '../src/middleware/errorHandler';
+import { validateParams } from '../src/middleware/validation';
+import { getProductByIdParamSchema } from '../src/schemas/product';
 
 // Mock the ProductService
 jest.mock('../src/services/productService');
@@ -14,7 +16,7 @@ app.use(express.json());
 
 const productController = new ProductController();
 app.get('/health', productController.healthCheck);
-app.get('/products/:id', productController.getProductById);
+app.get('/products/:id', validateParams(getProductByIdParamSchema), productController.getProductById);
 
 // Add error handler middleware for testing
 app.use((err: any, _req: any, res: any, _next: any) => {
@@ -103,28 +105,24 @@ describe('Product Controller', () => {
 
     it('should return 400 for invalid product ID format', async () => {
       const invalidId = 'invalid-id';
-      mockProductService.getProductById.mockRejectedValue(
-        new CustomError('Invalid product ID format', 400)
-      );
 
       const response = await request(app)
         .get(`/products/${invalidId}`)
         .expect(400);
 
-      expect(response.body.error).toBe('Invalid product ID format');
+      expect(response.body.message).toBe('Invalid input');
+      expect(response.body.errors.id).toBe('Invalid ObjectId format');
     });
 
     it('should return 400 for short product ID', async () => {
       const shortId = '123';
-      mockProductService.getProductById.mockRejectedValue(
-        new CustomError('Invalid product ID format', 400)
-      );
 
       const response = await request(app)
         .get(`/products/${shortId}`)
         .expect(400);
 
-      expect(response.body.error).toBe('Invalid product ID format');
+      expect(response.body.message).toBe('Invalid input');
+      expect(response.body.errors.id).toBe('Invalid ObjectId format');
     });
 
     it('should return 500 for unexpected service errors', async () => {

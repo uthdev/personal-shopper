@@ -1,9 +1,10 @@
 import express from 'express';
 import morgan from 'morgan';
 import { config } from './config';
-import logger from './logger';
+import logger from './utils/logger';
 import Database from './database';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import orderRoutes from './routes/orders';
 
 const app = express();
 
@@ -21,15 +22,8 @@ app.use(
 
 app.use(express.json());
 
-app.get('/health', (req, res) => {
-  logger.info('Health check requested');
-  res.json({
-    status: 'OK',
-    service: 'order-service',
-    environment: config.NODE_ENV,
-    port: config.PORT,
-  });
-});
+// Routes
+app.use('/', orderRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
