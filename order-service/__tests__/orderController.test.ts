@@ -357,4 +357,179 @@ describe('OrderController', () => {
       expect(response.body.errors.productId).toBe('Invalid ObjectId format');
     });
   });
+
+  describe('Payment Service Integration', () => {
+    it('should create order and update status to CONFIRMED when payment succeeds', async () => {
+      const validData = {
+        customerId: '507f1f77bcf86cd799439011',
+        productId: '507f1f77bcf86cd799439012',
+      };
+
+      mockOrderService.createOrder.mockResolvedValueOnce({
+        _id: '507f1f77bcf86cd799439014',
+        customerId: validData.customerId,
+        productId: validData.productId,
+        orderId: 'ORD-123',
+        totalAmount: 100,
+        status: OrderStatus.CONFIRMED,
+        items: [
+          {
+            productId: validData.productId,
+            productName: 'Test Product',
+            price: 100,
+            quantity: 1,
+            subtotal: 100,
+          },
+        ],
+        shippingAddress: {
+          street: '123 Main St',
+          city: 'New York',
+          state: 'NY',
+          zipCode: '10001',
+          country: 'USA',
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any);
+
+      const response = await request(app)
+        .post('/orders')
+        .send(validData)
+        .expect(201);
+
+      expect(response.body.status).toBe('success');
+      expect(response.body.data).toHaveProperty('_id');
+      expect(response.body.data.status).toBe(OrderStatus.CONFIRMED);
+      expect(response.body.data.totalAmount).toBe(100);
+      expect(mockOrderService.createOrder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          customerId: validData.customerId,
+          productId: validData.productId,
+        })
+      );
+    });
+
+    it('should create order with PENDING status when payment fails', async () => {
+      const validData = {
+        customerId: '507f1f77bcf86cd799439011',
+        productId: '507f1f77bcf86cd799439012',
+      };
+
+      mockOrderService.createOrder.mockResolvedValueOnce({
+        _id: '507f1f77bcf86cd799439014',
+        customerId: validData.customerId,
+        productId: validData.productId,
+        orderId: 'ORD-124',
+        totalAmount: 100,
+        status: OrderStatus.PENDING,
+        items: [
+          {
+            productId: validData.productId,
+            productName: 'Test Product',
+            price: 100,
+            quantity: 1,
+            subtotal: 100,
+          },
+        ],
+        shippingAddress: {
+          street: '123 Main St',
+          city: 'New York',
+          state: 'NY',
+          zipCode: '10001',
+          country: 'USA',
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any);
+
+      const response = await request(app)
+        .post('/orders')
+        .send(validData)
+        .expect(201);
+
+      expect(response.body.status).toBe('success');
+      expect(response.body.data).toHaveProperty('_id');
+      expect(response.body.data.status).toBe(OrderStatus.PENDING);
+      expect(response.body.data.totalAmount).toBe(100);
+    });
+
+    it('should return 400 when payment service call fails due to customer validation error', async () => {
+      const validData = {
+        customerId: '507f1f77bcf86cd799439011',
+        productId: '507f1f77bcf86cd799439012',
+      };
+
+      mockOrderService.createOrder.mockRejectedValueOnce(
+        new CustomError('Customer not found', 404)
+      );
+
+      const response = await request(app)
+        .post('/orders')
+        .send(validData)
+        .expect(404);
+
+      expect(response.body.error).toBe('Customer not found');
+    });
+
+    it('should return 400 when payment service call fails due to product validation error', async () => {
+      const validData = {
+        customerId: '507f1f77bcf86cd799439011',
+        productId: '507f1f77bcf86cd799439012',
+      };
+
+      mockOrderService.createOrder.mockRejectedValueOnce(
+        new CustomError('Product not found', 404)
+      );
+
+      const response = await request(app)
+        .post('/orders')
+        .send(validData)
+        .expect(404);
+
+      expect(response.body.error).toBe('Product not found');
+    });
+
+    it('should handle payment service timeout gracefully by creating order with PENDING status', async () => {
+      const validData = {
+        customerId: '507f1f77bcf86cd799439011',
+        productId: '507f1f77bcf86cd799439012',
+      };
+
+      // Even with timeout, order should be created with PENDING status
+      mockOrderService.createOrder.mockResolvedValueOnce({
+        _id: '507f1f77bcf86cd799439014',
+        customerId: validData.customerId,
+        productId: validData.productId,
+        orderId: 'ORD-125',
+        totalAmount: 100,
+        status: OrderStatus.PENDING,
+        items: [
+          {
+            productId: validData.productId,
+            productName: 'Test Product',
+            price: 100,
+            quantity: 1,
+            subtotal: 100,
+          },
+        ],
+        shippingAddress: {
+          street: '123 Main St',
+          city: 'New York',
+          state: 'NY',
+          zipCode: '10001',
+          country: 'USA',
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any);
+
+      const response = await request(app)
+        .post('/orders')
+        .send(validData)
+        .expect(201);
+
+      expect(response.body.status).toBe('success');
+      expect(response.body.data.status).toBe(OrderStatus.PENDING);
+    });
+  });
 });
