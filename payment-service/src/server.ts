@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Application } from 'express';
 import morgan from 'morgan';
 import { config } from './config';
 import logger from './logger';
@@ -7,7 +7,7 @@ import RabbitMQConnection from './rabbitmq';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import paymentRoutes from './routes/payments';
 
-const app = express();
+const app: Application = express();
 
 // Initialize database connection
 Database.getInstance().connect();
@@ -26,16 +26,6 @@ app.use(
 
 app.use(express.json());
 
-app.get('/health', (req, res) => {
-  logger.info('Health check requested');
-  res.json({
-    status: 'OK',
-    service: 'payment-service',
-    environment: config.NODE_ENV,
-    port: config.PORT,
-  });
-});
-
 // Routes
 app.use('/api', paymentRoutes);
 
@@ -48,8 +38,15 @@ app.use(errorHandler);
 // Graceful shutdown
 process.on('SIGINT', async () => {
   logger.info('Shutting down payment service...');
-  await RabbitMQConnection.getInstance().disconnect();
   await Database.getInstance().disconnect();
+  await RabbitMQConnection.getInstance().disconnect();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  logger.info('SIGTERM received, shutting down payment service...');
+  await Database.getInstance().disconnect();
+  await RabbitMQConnection.getInstance().disconnect();
   process.exit(0);
 });
 
@@ -58,3 +55,5 @@ app.listen(config.PORT, () => {
     `Payment service running on port ${config.PORT} in ${config.NODE_ENV} mode`
   );
 });
+
+export default app;
