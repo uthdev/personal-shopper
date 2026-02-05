@@ -1,16 +1,15 @@
 import amqp from 'amqplib';
 import { config } from './config';
 import logger from './logger';
-import { Transaction } from './models/Transaction';
+import { Transaction, TransactionStatus, TransactionType } from './models/Transaction';
+import { transactionMessageSchema, TransactionMessage } from './schemas/transaction';
+import { ZodError } from 'zod';
 
-export interface TransactionMessage {
-  transactionId: string; // Added transaction ID
-  customerId: string;
-  orderId: string;
-  productId: string;
-  amount: number;
-  currency?: string;
-  paymentMethod?: string;
+export interface DeadLetterMessage {
+  originalMessage: any;
+  error: string;
+  errorDetails: any;
+  failureCount: number;
   timestamp: Date;
 }
 
@@ -52,19 +51,31 @@ class RabbitMQConsumer {
         throw new Error('Failed to create channel');
       }
 
-      // Assert exchange and queue
+      // Set prefetch to process one message at a time
+      await this.channel.prefetch(1);
+
+      // Setup dead letter exchange and queue
+      await this.setupDeadLetterQueue();
+
+      // Assert main exchange and queue with dead letter routing
       await this.channel.assertExchange(config.RABBITMQ_EXCHANGE, 'direct', {
         durable: true,
       });
-      await this.channel.assertQueue(config.RABBITMQ_QUEUE, { durable: true });
+
+      await this.channel.assertQueue(config.RABBITMQ_QUEUE, {
+        durable: true,
+        arguments: {
+          'x-dead-letter-exchange': 'transactions_dlx',
+          'x-dead-letter-routing-key': 'transaction_dlk',
+          'x-message-ttl': 86400000, // 24 hours
+        },
+      });
+
       await this.channel.bindQueue(
         config.RABBITMQ_QUEUE,
         config.RABBITMQ_EXCHANGE,
         'transaction'
       );
-
-      // Set prefetch to process one message at a time
-      await this.channel.prefetch(1);
 
       // Connection event handlers
       this.connection.on('error', (error: Error) => {
@@ -80,6 +91,7 @@ class RabbitMQConsumer {
       this.reconnectAttempts = 0;
       this.isConnecting = false;
       logger.info('Connected to RabbitMQ successfully');
+      logger.info(`Listening on queue: ${config.RABBITMQ_QUEUE}`);
 
       // Start consuming messages
       await this.startConsuming();
@@ -87,6 +99,40 @@ class RabbitMQConsumer {
       this.isConnecting = false;
       logger.error('Failed to connect to RabbitMQ:', error);
       await this.handleReconnect();
+    }
+  }
+
+  private async setupDeadLetterQueue(): Promise<void> {
+    if (!this.channel) {
+      throw new Error('RabbitMQ channel not available');
+    }
+
+    try {
+      // Create dead letter exchange
+      await this.channel.assertExchange('transactions_dlx', 'direct', {
+        durable: true,
+      });
+
+      // Create dead letter queue
+      await this.channel.assertQueue('transactions_dlq', {
+        durable: true,
+        arguments: {
+          'x-message-ttl': 86400000, // 24 hours
+          'x-max-length': 100000, // Max 100k messages
+        },
+      });
+
+      // Bind dead letter queue
+      await this.channel.bindQueue(
+        'transactions_dlq',
+        'transactions_dlx',
+        'transaction_dlk'
+      );
+
+      logger.info('Dead letter queue setup completed');
+    } catch (error) {
+      logger.error('Failed to setup dead letter queue:', error);
+      throw error;
     }
   }
 
@@ -107,30 +153,43 @@ class RabbitMQConsumer {
   }
 
   private async processMessage(message: any): Promise<void> {
+    let retryCount = 0;
+    const retryHeader = message.properties.headers?.['x-death'];
+    
+    if (retryHeader && Array.isArray(retryHeader) && retryHeader.length > 0) {
+      retryCount = retryHeader[0].count || 0;
+    }
+
     try {
       const content = message.content.toString();
-      const transactionData: TransactionMessage = JSON.parse(content);
+      const messageData = JSON.parse(content);
+
+      // Validate message format
+      const validatedData = await this.validateTransactionMessage(messageData);
 
       logger.info('Processing transaction message', {
-        orderId: transactionData.orderId,
-        customerId: transactionData.customerId,
+        transactionId: validatedData.transactionId,
+        orderId: validatedData.orderId,
+        customerId: validatedData.customerId,
+        amount: validatedData.amount,
       });
 
       // Save transaction to database
       const transaction = new Transaction({
-        transactionId: transactionData.transactionId, // Use provided transaction ID
-        customerId: transactionData.customerId,
-        orderId: transactionData.orderId,
-        productId: transactionData.productId,
-        amount: transactionData.amount,
-        currency: transactionData.currency || 'USD',
-        status: 'completed',
-        type: 'payment',
-        paymentMethod: transactionData.paymentMethod || 'credit_card',
+        transactionId: validatedData.transactionId,
+        customerId: validatedData.customerId,
+        orderId: validatedData.orderId,
+        productId: validatedData.productId,
+        amount: validatedData.amount,
+        currency: validatedData.currency || 'USD',
+        status: TransactionStatus.COMPLETED,
+        type: TransactionType.PAYMENT,
+        paymentMethod: validatedData.paymentMethod || 'credit_card',
         paymentGateway: 'stripe',
         metadata: {
           processedBy: 'worker-service',
-          originalTimestamp: transactionData.timestamp,
+          originalTimestamp: validatedData.timestamp,
+          retryCount,
         },
       });
 
@@ -138,7 +197,8 @@ class RabbitMQConsumer {
 
       logger.info('Transaction saved successfully', {
         transactionId: transaction.transactionId,
-        orderId: transactionData.orderId,
+        orderId: validatedData.orderId,
+        mongoId: transaction._id,
       });
 
       // Acknowledge message
@@ -146,12 +206,93 @@ class RabbitMQConsumer {
         this.channel.ack(message);
       }
     } catch (error) {
-      logger.error('Error processing message:', error);
+      logger.error('Error processing message:', {
+        error: error instanceof Error ? error.message : String(error),
+        retryCount,
+        maxRetries: 3,
+      });
 
-      // Reject message and requeue for retry
-      if (this.channel) {
-        this.channel.nack(message, false, true);
+      // Determine if we should retry or send to dead letter queue
+      if (retryCount < 3) {
+        // Reject message and requeue for retry
+        if (this.channel) {
+          this.channel.nack(message, false, true);
+          logger.warn(
+            `Message requeued for retry (attempt ${retryCount + 1}/3)`
+          );
+        }
+      } else {
+        // Max retries exceeded, send to dead letter queue
+        await this.sendToDeadLetterQueue(
+          message,
+          error instanceof Error ? error.message : String(error),
+          error
+        );
+
+        // Acknowledge message to remove from main queue
+        if (this.channel) {
+          this.channel.ack(message);
+        }
       }
+    }
+  }
+
+  private async validateTransactionMessage(
+    data: any
+  ): Promise<TransactionMessage> {
+    try {
+      const validated = transactionMessageSchema.parse(data);
+      return validated;
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const fieldErrors = error.errors.map((err) => ({
+          field: err.path.join('.'),
+          message: err.message,
+        }));
+        
+        logger.error('Transaction message validation failed', { fieldErrors });
+        throw new Error(
+          `Validation failed: ${fieldErrors.map((e) => `${e.field}: ${e.message}`).join('; ')}`
+        );
+      }
+      throw error;
+    }
+  }
+
+  private async sendToDeadLetterQueue(
+    message: any,
+    errorMessage: string,
+    error: any
+  ): Promise<void> {
+    try {
+      if (!this.channel) {
+        logger.error('Channel not available for dead letter queue');
+        return;
+      }
+
+      const dlqMessage: DeadLetterMessage = {
+        originalMessage: JSON.parse(message.content.toString()),
+        error: errorMessage,
+        errorDetails: error instanceof Error ? error.stack : String(error),
+        failureCount: 3,
+        timestamp: new Date(),
+      };
+
+      await this.channel.sendToQueue('transactions_dlq', Buffer.from(JSON.stringify(dlqMessage)), {
+        persistent: true,
+        headers: {
+          'x-original-queue': config.RABBITMQ_QUEUE,
+          'x-failure-reason': errorMessage,
+        },
+      });
+
+      logger.warn('Message sent to dead letter queue', {
+        error: errorMessage,
+        originalTransactionId:
+          dlqMessage.originalMessage.transactionId || 'unknown',
+      });
+    } catch (dlqError) {
+      logger.error('Failed to send message to dead letter queue:', dlqError);
     }
   }
 
