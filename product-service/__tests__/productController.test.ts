@@ -38,9 +38,13 @@ describe('Product Controller', () => {
         .get('/health')
         .expect(200);
 
-      expect(response.body.status).toBe('healthy');
+      expect(response.body.status).toBe('OK');
       expect(response.body.service).toBe('product-service');
+      expect(response.body.version).toBeDefined();
       expect(response.body.timestamp).toBeDefined();
+      expect(response.body.uptime).toBeDefined();
+      expect(response.body.database).toBeDefined();
+      expect(response.body.database.status).toMatch(/connected|disconnected/);
       expect(new Date(response.body.timestamp)).toBeInstanceOf(Date);
     });
   });

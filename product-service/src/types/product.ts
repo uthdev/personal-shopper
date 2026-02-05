@@ -25,7 +25,13 @@ export interface ProductResponse {
 }
 
 export interface HealthResponse {
-  status: string;
+  status: 'OK' | 'DEGRADED' | 'ERROR';
   service: string;
+  version: string;
   timestamp: string;
+  uptime: number;
+  database: {
+    status: 'connected' | 'disconnected';
+    latency?: number;
+  };
 }

@@ -1,9 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 import { OrderService } from '../services/orderService';
 import { CreateOrderRequest } from '../schemas/order';
 import { HealthResponse, OrderResponse } from '../types/order';
 import { CustomError } from '../middleware/errorHandler';
 import logger from '../utils/logger';
+import { version } from '../../package.json';
+
+const startTime = Date.now();
 
 export class OrderController {
   private orderService: OrderService;
@@ -12,14 +16,46 @@ export class OrderController {
     this.orderService = new OrderService();
   }
 
-  healthCheck = (_req: Request, res: Response): void => {
-    logger.info('Health check requested');
-    const response: HealthResponse = {
-      status: 'OK',
-      service: 'order-service',
-      timestamp: new Date().toISOString(),
-    };
-    res.status(200).json(response);
+  healthCheck = async (_req: Request, res: Response): Promise<void> => {
+    try {
+      logger.info('Health check requested');
+      const startLatency = Date.now();
+      const dbHealthy = mongoose.connection.readyState === 1;
+      const latency = Date.now() - startLatency;
+
+      // Ping database for actual latency check
+      if (dbHealthy) {
+        await mongoose.connection.db?.admin().ping();
+      }
+
+      const response: HealthResponse = {
+        status: dbHealthy ? 'OK' : 'ERROR',
+        service: 'order-service',
+        version,
+        timestamp: new Date().toISOString(),
+        uptime: Math.floor((Date.now() - startTime) / 1000),
+        database: {
+          status: dbHealthy ? 'connected' : 'disconnected',
+          latency: latency,
+        },
+      };
+
+      const statusCode = dbHealthy ? 200 : 503;
+      res.status(statusCode).json(response);
+    } catch (error) {
+      const response: HealthResponse = {
+        status: 'ERROR',
+        service: 'order-service',
+        version,
+        timestamp: new Date().toISOString(),
+        uptime: Math.floor((Date.now() - startTime) / 1000),
+        database: {
+          status: 'disconnected',
+          latency: undefined,
+        },
+      };
+      res.status(503).json(response);
+    }
   };
 
   createOrder = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
